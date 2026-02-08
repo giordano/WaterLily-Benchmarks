@@ -24,6 +24,6 @@ for frequency in ${FEW_FREQUENCIES[@]}; do
     for power in ${POWER_CAPS[@]}; do
         sudo nvidia-smi --lock-gpu-clocks=${frequency},${frequency}
         sudo nvidia-smi --power-limit=${power}
-        sh benchmark.sh -v "1.12" -t "1" -b "CuArray" -c "sphere" -p "6" -s "30" -ft "Float32" -wd "${HOME}/.julia/dev/WaterLily" --data_dir "data-${frequency}-${power}/benchmarks"
+        sh benchmark.sh -v "1.12" -t "1" -b "CuArray" -c "sphere" -p "6" -s "50" -ft "Float32" -wd "${HOME}/.julia/dev/WaterLily" --data_dir "data-${frequency}-${power}/benchmarks"
     done
 done
