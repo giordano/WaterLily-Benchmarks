@@ -1,3 +1,5 @@
+using CUDA: CUDA
+
 include("cases.jl")
 include("util.jl")
 
@@ -10,9 +12,24 @@ function run_benchmarks(cases, log2p, max_steps, ftype, backend, bstr; data_dir=
         add_to_suite!(suite, getf(case); p=p, s=s, ft=ft, backend=backend, bstr=bstr,
             remeasure = any(x -> x==case, ["cylinder", "jelly"])
         ) # create benchmark
-        results[bstr] = run(suite[bstr], samples=1, evals=1, seconds=1e6, verbose=true) # run!
+        dev = first(CUDA.NVML.devices())
+        energy_start = CUDA.NVML.energy_consumption(dev)
+        total_time = @elapsed results[bstr] = run(suite[bstr], samples=1, evals=1, seconds=1e6, verbose=true) # run!
+        energy_end = CUDA.NVML.energy_consumption(dev)
         fname = "$(case)_$(p...)_$(s)_$(ft)_$(bstr)_$(git_hash)_$VERSION.json"
         BenchmarkTools.save(joinpath(data_dir,fname), results)
+
+        # Convert energy usage from Joule to Watt-Hour
+        energy_wh = (energy_end - energy_start) / 3600
+        json = """
+        {
+          "energy": $(energy_wh),
+          "total_time": $(total_time)
+        }
+        """
+        # Write an additional JSON file with energy usage and total run time
+        # (not the average time step) of the benchmark.
+        write(joinpath(data_dir, "energy-time.json"), json)
     end
 end
 
