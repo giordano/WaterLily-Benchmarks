@@ -9,6 +9,17 @@ MIN_POWER_CAP=150
 MAX_POWER_CAP=300
 POWER_CAPS=(${MIN_POWER_CAP} 175 200 225 250 275 ${MAX_POWER_CAP})
 
+function reset_gpus() {
+    sudo nvidia-smi --power-limit=${MAX_POWER_CAP}
+    sudo nvidia-smi --reset-gpu-clocks
+}
+
+# Reset GPUs on exit
+trap reset_gpus INT QUIT TERM EXIT
+
+# Reset GPUs before starting, for good measure
+reset_gpus
+
 for frequency in ${FEW_FREQUENCIES[@]}; do
     for power in ${POWER_CAPS[@]}; do
         sudo nvidia-smi --lock-gpu-clocks=${frequency},${frequency}
@@ -16,6 +27,3 @@ for frequency in ${FEW_FREQUENCIES[@]}; do
         sh benchmark.sh -v "1.12" -t "1" -b "CuArray" -c "sphere" -p "6" -s "30" -ft "Float32" -wd "${HOME}/.julia/dev/WaterLily" --data_dir "data-${frequency}-${power}/benchmarks"
     done
 done
-
-sudo nvidia-smi --power-limit=${MAX_POWER_CAP}
-sudo nvidia-smi --reset-gpu-clocks
